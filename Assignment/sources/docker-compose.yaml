@@ -1,0 +1,81 @@
+networks:
+  smnet:
+    driver: bridge
+
+volumes:
+  user-pgdata:
+  post-pgdata:
+
+services:
+
+  # gateway:
+
+  # prometheus:
+    
+  # user-load-balancer:
+
+  # post-load-balancer:
+
+  # feed-service:
+
+  user-service-1:
+    build: ./services/user-service
+    ports:
+      - "8001:5000"  # TO REMOVE: for testing purposes
+    environment:
+      - POSTGRES_DSN=${USER_POSTGRES_DSN}
+    networks:
+      smnet:
+    depends_on:
+      - user-db
+
+  user-service-2:
+    build: ./services/user-service
+    environment:
+      - POSTGRES_DSN=${USER_POSTGRES_DSN}
+    networks:
+      smnet:
+    depends_on:
+      - user-db
+
+  post-service-1:
+    build: ./services/post-service
+    ports:
+      - "8002:5000"  # TO REMOVE: for testing purposes
+    environment:
+      - POSTGRES_DSN=${POST_POSTGRES_DSN}
+    networks:
+      smnet:
+    depends_on:
+      - post-db
+
+  post-service-2:
+    build: ./services/post-service
+    environment:
+      - POSTGRES_DSN=${POST_POSTGRES_DSN}
+    networks:
+      smnet:
+    depends_on:
+      - post-db
+
+  user-db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${USER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${USER_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${USER_POSTGRES_DB}
+    volumes:
+      - user-pgdata:/var/lib/postgresql/data
+    networks:
+      smnet:
+
+  post-db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POST_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POST_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POST_POSTGRES_DB}
+    volumes:
+      - post-pgdata:/var/lib/postgresql/data
+    networks:
+      smnet:

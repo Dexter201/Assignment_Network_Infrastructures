@@ -1,0 +1,4 @@
+port: "5000"
+cert_path: "/app/cert.pem"
+key_path: "/app/key.pem"
+
