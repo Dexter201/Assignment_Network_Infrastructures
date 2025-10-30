@@ -20,11 +20,11 @@ services:
       - ./services/gateway/key.pem:/app/key.pem
       - ./services/gateway/config.yaml:/app/config.yaml
     environment:
-      - AUTH_POSFRES_DSN=${AUTH_POSFRES_DSN}
+      - AUTH_POSTGRES_DSN=${AUTH_POSTGRES_DSN}
     networks:
       - smnet
     depends_on:
-      - auth_db 
+      - auth-db 
       - user-load-balancer
       - post-load-balancer
       - feed-service
@@ -43,7 +43,7 @@ services:
   user-load-balancer:
     build: ./services/load-balancer
     volumes: 
-      - ./services/load-balancer/user_lb_config.yaml:/app/config.yaml
+      - ./services/load-balancer/user-lb-config.yaml:/app/config.yaml
     networks:
       - smnet
     depends_on:
@@ -53,7 +53,7 @@ services:
   post-load-balancer:
     build: ./services/load-balancer
     volumes:
-      - ./services/load-balancer/post_lb_config.yaml:/app/config.yaml
+      - ./services/load-balancer/post-lb-config.yaml:/app/config.yaml
     networks:
       - smnet
     depends_on:

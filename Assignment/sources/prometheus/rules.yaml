@@ -1,0 +1,15 @@
+groups:
+  - name: gateway_rules
+    rules:
+      # Rule 1: Total number of requests per method
+      - record: http_requests_total_per_method
+        expr: sum(gateway_http_requests_total) by (method)
+
+      # Rule 2: Request rate per second on POST /api/posts
+      - record: http_request_rate_posts_1m
+        expr: sum(rate(gateway_http_requests_total{method="POST", endpoint="/api/posts"}[1m]))
+
+      # Rule 3: Average latency per endpoint over 1 minute
+      - record: http_request_latency_avg_1m
+        expr: sum(rate(gateway_http_request_duration_seconds_sum[1m])) by (path) 
+              / sum(rate(gateway_http_request_duration_seconds_count[1m])) by (path)

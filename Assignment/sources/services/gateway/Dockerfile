@@ -24,8 +24,8 @@ RUN go mod download
 COPY . .
 
 # Build the Go application.
-# This compiles your Go code into a binary named `user-service`.
-RUN go build -o user-service
+# This compiles your Go code into a binary named gateway
+RUN go build -o gateway
 
 # Inform Docker that the container will listen on port 8443 at runtime. (443 and 8443 for https)
 # This is purely informational and does not actually publish the port.
@@ -34,7 +34,6 @@ EXPOSE 8443
 
 # Copy the certificate and key
 COPY cert.pem key.pem ./
-
 
 # Specify the command to run when the container starts.
 # This command executes the `user-service` binary, which starts your application.

@@ -8,6 +8,6 @@ RUN go mod download
 
 COPY . . 
 
-RUN go build -o lood-balancer
+RUN go build -o load-balancer
 EXPOSE 8080
 ENTRYPOINT ["./load-balancer"]
