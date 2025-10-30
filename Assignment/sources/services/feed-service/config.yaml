@@ -1,0 +1,6 @@
+# The port this feed-service will listen on
+port: 5000
+
+# URLs of the services it needs to query
+user_lb_url: "http://user-load-balancer:8080"
+post_lb_url: "http://post-load-balancer:8080"

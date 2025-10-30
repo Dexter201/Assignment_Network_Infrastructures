@@ -5,18 +5,70 @@ networks:
 volumes:
   user-pgdata:
   post-pgdata:
+  auth-pgdata: 
 
 services:
 
-  # gateway:
-
-  # prometheus:
+  gateway:
+    build: ./services/gateway
+    ports:
+      # Best Choice": Map standard HTTPS port 443 
+      # to our internal container port 8443.
+      - "443:8443"
+    volumes:
+      - ./services/gateway/cert.pem:/app/cert.pem
+      - ./services/gateway/key.pem:/app/key.pem
+      - ./services/gateway/config.yaml:/app/config.yaml
+    environment:
+      - AUTH_POSFRES_DSN=${AUTH_POSFRES_DSN}
+    networks:
+      - smnet
+    depends_on:
+      - auth_db 
+      - user-load-balancer
+      - post-load-balancer
+      - feed-service
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules.yaml:/etc/prometheus/rules.yaml
+    networks:
+      - smnet
+    depends_on:
+      - gateway
     
-  # user-load-balancer:
+  user-load-balancer:
+    build: ./services/load-balancer
+    volumes: 
+      - ./services/load-balancer/user_lb_config.yaml:/app/config.yaml
+    networks:
+      - smnet
+    depends_on:
+      - user-service-1
+      - user-service-2
 
-  # post-load-balancer:
+  post-load-balancer:
+    build: ./services/load-balancer
+    volumes:
+      - ./services/load-balancer/post_lb_config.yaml:/app/config.yaml
+    networks:
+      - smnet
+    depends_on:
+      - post-service-1
+      - post-service-2
 
-  # feed-service:
+  feed-service:
+    build: ./services/feed-service
+    volumes:
+      - ./services/feed-service/config.yaml:/app/config.yaml
+    networks:
+      - smnet
+    depends_on:
+      - user-load-balancer
+      - post-load-balancer
 
   user-service-1:
     build: ./services/user-service
@@ -77,5 +129,16 @@ services:
       POSTGRES_DB: ${POST_POSTGRES_DB}
     volumes:
       - post-pgdata:/var/lib/postgresql/data
+    networks:
+      smnet:
+  
+  auth-db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${AUTH_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AUTH_POSTGRES_DB}
+    volumes:
+      - auth-pgdata:/var/lib/postgresql/data
     networks:
       smnet:

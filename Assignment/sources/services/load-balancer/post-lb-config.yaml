@@ -1,0 +1,6 @@
+port: 8080
+algorithm: leastconn
+rate: 100
+backends:
+  - "post-service-1:5000"
+  - "post-service-2:5000"
