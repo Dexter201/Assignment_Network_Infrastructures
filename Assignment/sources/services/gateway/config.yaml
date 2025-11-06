@@ -1,8 +1,0 @@
-port: "8433"
-cert_path: "/app/cert.pem"
-key_path: "/app/key.pem"
-
-# Downstream URLs for the proxy
-user_lb_url: "http://user-load-balancer:8080"
-post_lb_url: "http://post-load-balancer:8080"
-feed_service_url: "http://feed-service:5000"

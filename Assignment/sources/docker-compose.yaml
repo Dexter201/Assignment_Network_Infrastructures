@@ -9,6 +9,7 @@ volumes:
 
 services:
 
+
   gateway:
     build: ./services/gateway
     ports:
@@ -16,11 +17,17 @@ services:
       # to our internal container port 8443.
       - "443:8443"
     volumes:
-      - ./services/gateway/cert.pem:/app/cert.pem
-      - ./services/gateway/key.pem:/app/key.pem
-      - ./services/gateway/config.yaml:/app/config.yaml
+      - ./services/gateway/cert.pem:${GATEWAY_CERT_PATH}
+      - ./services/gateway/key.pem:${GATEWAY_KEY_PATH}
     environment:
+      - GATEWAY_PORT=${GATEWAY_PORT}
+      - GATEWAY_CERT_PATH=${GATEWAY_CERT_PATH}
+      - GATEWAY_KEY_PATH=${GATEWAY_KEY_PATH}
       - AUTH_POSTGRES_DSN=${AUTH_POSTGRES_DSN}
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+      - POST_SERVICE_URL=${POST_SERVICE_URL}
+      - FEED_SERVICE_URL=${FEED_SERVICE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     networks:
       - smnet
     depends_on:
@@ -42,8 +49,10 @@ services:
     
   user-load-balancer:
     build: ./services/load-balancer
-    volumes: 
-      - ./services/load-balancer/user-lb-config.yaml:/app/config.yaml
+    environment:
+      - LB_PORT=${USER_LB_PORT}
+      - LB_ALGORITHM=${USER_LB_ALGORITHM}
+      - LB_BACKENDS=${USER_LB_BACKENDS}
     networks:
       - smnet
     depends_on:
@@ -52,8 +61,10 @@ services:
 
   post-load-balancer:
     build: ./services/load-balancer
-    volumes:
-      - ./services/load-balancer/post-lb-config.yaml:/app/config.yaml
+    environment:
+      - LB_PORT=${POST_LB_PORT}
+      - LB_ALGORITHM=${POST_LB_ALGORITHM}
+      - LB_BACKENDS=${POST_LB_BACKENDS}
     networks:
       - smnet
     depends_on:
@@ -62,8 +73,10 @@ services:
 
   feed-service:
     build: ./services/feed-service
-    volumes:
-      - ./services/feed-service/config.yaml:/app/config.yaml
+    environment:
+      - FEED_SERVICE_PORT = ${FEED_SERVICE_PORT}
+      - USER_SERVICE_URL = ${USER_SERVICE_URL}
+      - POST_SERVICE_URL = ${POST_SERVICE_URL}
     networks:
       - smnet
     depends_on:
