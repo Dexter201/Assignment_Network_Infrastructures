@@ -1,27 +1,48 @@
-package main
+package feed
 
 import (
+	"errors"
+	"log"
+	"net/http"
 	"os"
-
-	"gopkg.in/yaml.v3"
 )
 
+// Config holds configuration for the feed-service
 type Config struct {
-	Port      string `yaml:"port"`
-	UserLBURL string `yaml:"user_lb_url"`
-	PostLBURL string `yaml:"post_lb_url"`
+	Port      string
+	UserLBURL string
+	PostLBURL string
 }
 
-// LoadConfig reads and parses the config.yaml file
-func LoadConfig(path string) (*Config, error) {
-	var cfg Config
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
+// LoadConfig reads and parses configuration from environment variables
+func LoadConfig() (*Config, error) {
+
+	cfg := &Config{
+		Port:      os.Getenv("FEED_SERVICE_PORT"),
+		UserLBURL: os.Getenv("USER_SERVICE_URL"),
+		PostLBURL: os.Getenv("POST_SERVICE_URL"),
 	}
-	err = yaml.Unmarshal(file, &cfg)
-	if err != nil {
-		return nil, err
+
+	if cfg.Port == "" {
+		cfg.Port = "8080" // A default if not set
+		log.Printf("Feed service: Defaulting to port %s", cfg.Port)
 	}
-	return &cfg, nil
+
+	if cfg.UserLBURL == "" {
+		return nil, errors.New("USER_SERVICE_URL environment variable is not set")
+	}
+	if cfg.PostLBURL == "" {
+		return nil, errors.New("POST_SERVICE_URL environment variable is not set")
+	}
+
+	log.Println("Feed service configuration loaded successfully")
+	return cfg, nil
+}
+
+func healthcheck(mux *http.ServeMux) {
+	//healthz is a standard way to name health check endpoints
+	mux.HandleFunc("/healthz", func(writer http.ResponseWriter, receiver *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte("OK"))
+	})
 }

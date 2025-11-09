@@ -92,3 +92,12 @@ func connectToDB(config *Config) (*sql.DB, error) {
 	log.Println("Successfully connected to the database.")
 	return db, nil
 }
+
+// test function
+func healthcheck(mux *http.ServeMux) {
+	//healthz is a standard way to name health check endpoints
+	mux.HandleFunc("/healthz", func(writer http.ResponseWriter, receiver *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte("OK"))
+	})
+}
