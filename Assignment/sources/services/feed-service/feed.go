@@ -59,7 +59,7 @@ func (handler *FeedHandler) ServeHTTP(writer http.ResponseWriter, receiver *http
 		return
 	}
 
-	allPosts := handler.fetchPostsForFriends(userID, friendIDs, true)
+	allPosts := handler.fetchPostsForFriends(userID, friendIDs)
 
 	sortPostsByTimestamp(allPosts)
 
@@ -149,17 +149,7 @@ func (handler *FeedHandler) fetchPosts(authUserID, friendID string) ([]Post, err
 	return posts, nil
 }
 
-func (handler *FeedHandler) fetchPostsForFriends(userID string, friendIDs []string, concurent bool) []Post {
-	if concurent {
-		return handler.fetchPostsForFriends_Concurrent(userID, friendIDs)
-	} else {
-		return handler.fetchPostsForFriends_Serial(userID, friendIDs)
-	}
-
-}
-
-// fetchPostsForFriends_Concurrent fetches posts for all friends in parallel --> just wondering if concurrency gives us a big performence boost or not.
-func (handler *FeedHandler) fetchPostsForFriends_Concurrent(userID string, friendIDs []string) []Post {
+func (handler *FeedHandler) fetchPostsForFriends(userID string, friendIDs []string) []Post {
 	var allPosts []Post
 	var wg sync.WaitGroup
 	postsChan := make(chan []Post, len(friendIDs))
@@ -182,25 +172,6 @@ func (handler *FeedHandler) fetchPostsForFriends_Concurrent(userID string, frien
 	close(postsChan)
 
 	for posts := range postsChan {
-		allPosts = append(allPosts, posts...)
-	}
-
-	return allPosts
-}
-
-// fetchPostsForFriends_Serial fetches posts for all friends serially (one after another)
-func (handler *FeedHandler) fetchPostsForFriends_Serial(userID string, friendIDs []string) []Post {
-	var allPosts []Post
-
-	// Loop through each friend ID one by one
-	for _, friendID := range friendIDs {
-
-		posts, err := handler.fetchPosts(userID, friendID)
-		if err != nil {
-			log.Printf("Failed to fetch posts for friend %s: %v", friendID, err)
-			continue
-		}
-
 		allPosts = append(allPosts, posts...)
 	}
 

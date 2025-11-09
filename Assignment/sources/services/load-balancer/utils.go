@@ -1,29 +1,68 @@
-package main
+package lb
 
 import (
+	"errors"
+	"log"
 	"os"
-
-	"gopkg.in/yaml.v3"
+	"strconv"
+	"strings"
 )
 
-// Config struct for load-balancer
 type Config struct {
-	Port      string   `yaml:"port"`
-	Algorithm string   `yaml:"algorithm"`
-	Backends  []string `yaml:"backends"`
-	Rate      float64  `yaml:"rate"`
+	Port      string
+	Algorithm string
+	Backends  []string
+	Rate      float64
 }
 
-// LoadConfig reads and parses the config.yaml file
-func LoadConfig(path string) (*Config, error) {
-	var cfg Config
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
+// LoadConfig reads and parses configuration from environment variables
+func LoadConfig() (*Config, error) {
+
+	port := os.Getenv("LB_PORT")
+	algorithm := os.Getenv("LB_ALGORITHM")
+	backendsStr := os.Getenv("LB_BACKENDS")
+	rateStr := os.Getenv("LB_RATE")
+
+	if port == "" {
+		port = "8080" // default
+		log.Printf("Defaulting to port %s", port)
 	}
-	err = yaml.Unmarshal(file, &cfg)
-	if err != nil {
-		return nil, err
+
+	if algorithm == "" {
+		algorithm = "roundrobin" // Default to roundrobin
+		log.Printf("Defaulting to algorithm %s", algorithm)
 	}
-	return &cfg, nil
+	// Validate algorithm
+	if algorithm != "roundrobin" && algorithm != "leastconn" && algorithm != "hashing" {
+		return nil, errors.New("invalid algorithm: must be roundrobin, leastconn, or hashing")
+	}
+
+	if backendsStr == "" {
+		return nil, errors.New("LB_BACKENDS environment variable is not set")
+	}
+
+	backends := strings.Split(backendsStr, ",")
+	if len(backends) == 0 {
+		return nil, errors.New("no backends provided")
+	}
+	log.Printf("Loaded backends: %v", backends)
+
+	// --- Rate ---
+	var rate float64 = 100.0 // Default 100 MB/s
+	if rateStr != "" {
+		var err error
+		rate, err = strconv.ParseFloat(rateStr, 64)
+		if err != nil {
+			return nil, errors.New("invalid LB_RATE: must be a number")
+		}
+	}
+
+	cfg := &Config{
+		Port:      port,
+		Algorithm: algorithm,
+		Backends:  backends,
+		Rate:      rate,
+	}
+
+	return cfg, nil
 }
