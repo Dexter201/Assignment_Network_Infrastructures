@@ -94,7 +94,7 @@ type privateUserKey string
 
 const userIDKey privateUserKey = "userID"
 
-func (header *Handler) validationMiddlerware(next http.Handler) http.Handler {
+func (header *Handler) validationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, receiver *http.Request) {
 
 		authHeader := receiver.Header.Get("Authorization")
@@ -103,7 +103,7 @@ func (header *Handler) validationMiddlerware(next http.Handler) http.Handler {
 			return
 		}
 
-		headerParts := strings.SplitN(authHeader, " ")
+		headerParts := strings.SplitN(authHeader, " ", 2)
 		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
 			http.Error(writer, "Invalid Authorization header format", http.StatusUnauthorized)
 			return
@@ -137,7 +137,7 @@ func (header *Handler) validationMiddlerware(next http.Handler) http.Handler {
 		//We could have something more precise like: user=a0eebc99... POST /api/feed 200 0.0123s
 		userContext := context.WithValue(receiver.Context(), userIDKey, claims.UserID)
 
-		next.ServeHTTP(writer, receiver.WithContext(userContext))
+		callNextHandler(next, writer, receiver.WithContext(userContext))
 
 	})
 }

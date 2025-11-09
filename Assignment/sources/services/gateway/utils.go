@@ -1,9 +1,11 @@
-package main
+package gateway
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -15,8 +17,8 @@ type Config struct {
 	UserServiceURL string
 	PostServiceURL string
 	FeedServiceURL string
-	AuthDSN        string // For the Auth DB
-	JWTSecret      string // For signing JWTs
+	AuthDSN        string
+	JWTSecret      string
 }
 
 // LoadConfig reads and parses configuration from environment variables
@@ -32,13 +34,12 @@ func LoadConfig() (*Config, error) {
 		JWTSecret:      os.Getenv("JWT_SECRET_KEY"),
 	}
 
-	// Set default port
 	if cfg.Port == "" {
 		cfg.Port = "8443"
 		log.Printf("Defaulting to port %s", cfg.Port)
 	}
 
-	// Validate critical variables
+	// Validate variables
 	if cfg.CertPath == "" {
 		return nil, errors.New("GATEWAY_CERT_PATH environment variable is not set")
 	}
@@ -66,4 +67,28 @@ func getEnvOrError(key string) (string, error) {
 		return "", fmt.Errorf("environment variable %s is not set", key)
 	}
 	return value, nil
+}
+
+func callNextHandler(next http.Handler, writer http.ResponseWriter, receiver *http.Request) {
+	next.ServeHTTP(writer, receiver)
+}
+
+func connectToDB(config *Config) (*sql.DB, error) {
+
+	connStr := config.AuthDSN
+
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database connection: %w", err)
+	}
+
+	//Ping the database to verify the connection
+	//and close connection if error -->log
+	if err = db.Ping(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	log.Println("Successfully connected to the database.")
+	return db, nil
 }
