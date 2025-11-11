@@ -1,4 +1,4 @@
-package lb
+package main
 
 import (
 	"hash/fnv"

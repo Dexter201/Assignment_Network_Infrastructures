@@ -1,4 +1,4 @@
-package gateway
+package main
 
 import (
 	"log"
@@ -29,7 +29,7 @@ func createProxy(targetURL string) (*httputil.ReverseProxy, error) {
 		originalDirector(request)
 		request.Host = target.Host
 
-		// 3b. Inject the 'X-Forwarded-Host' header.
+
 		request.Header.Set("X-Forwarded-Host", request.Host)
 		// We don't set "X-User-ID" here since authMiddleware already set it
 		// The proxy shall just forward it automatically for ease

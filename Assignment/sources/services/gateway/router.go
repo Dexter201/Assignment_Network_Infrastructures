@@ -1,4 +1,4 @@
-package gateway
+package main
 
 import (
 	"fmt"
@@ -59,11 +59,4 @@ func createRouter(authHandler *Handler, metricsHandler *MetricsHandler, config *
 	return mux, nil
 }
 
-// test function
-func healthcheck(mux *http.ServeMux) {
-	//healthz is a standard way to name health check endpoints
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
-}
+

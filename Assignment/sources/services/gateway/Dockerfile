@@ -16,6 +16,7 @@ COPY go.mod go.sum ./
 
 # Download all dependencies listed in `go.mod`.
 # and tidy up
+
 RUN go mod tidy
 RUN go mod download
 
