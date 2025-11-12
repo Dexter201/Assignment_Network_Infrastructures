@@ -1,6 +1,0 @@
-port: 8080
-algorithm: roundrobin
-rate: 100 
-backends:
-  - "user-service-1:5000"
-  - "user-service-2:5000"

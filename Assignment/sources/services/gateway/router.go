@@ -36,27 +36,26 @@ func createRouter(authHandler *Handler, metricsHandler *MetricsHandler, config *
 
 	//auth --> we are unauthenticated
 	//Chain: Request -> Mux -> metrics.Middleware -> auth.loginHandler
+	//does not need striping -> does not pass through proxy
 	mux.Handle("/api/auth/register", metricsHandler.metricsMiddleware(http.HandlerFunc(authHandler.register)))
 	mux.Handle("/api/auth/login", metricsHandler.metricsMiddleware(http.HandlerFunc(authHandler.login)))
 
 	//authenticated
-	//Chain: Request -> Mux -> metrics.Middleware -> auth.validationMiddleware -> proxy.Handler -> (Some Downstream Service)
+	//Chain: Request -> Mux -> auth.validationMiddleware -> metrics.Middleware -> proxy.Handler -> (Some Downstream Service)
+	//need to strip of "api" for correct proxy handling
 
 	//user Service
-	userHandler := metricsHandler.metricsMiddleware(authHandler.validationMiddleware(userProxy))
+	userHandler := authHandler.validationMiddleware(metricsHandler.metricsMiddleware(http.StripPrefix("/api", userProxy)))
 	mux.Handle("/api/profile/", userHandler) // Catches /api/profile/me and /api/profile/{userId}
 	mux.Handle("/api/friends", userHandler)
 
 	//post Service
-	postHandler := metricsHandler.metricsMiddleware(authHandler.validationMiddleware(postProxy))
-	mux.Handle("/api/posts", postHandler)  // Catches exact /api/posts path
-	mux.Handle("/api/posts/", postHandler) // Catches /api/posts/{userId}
+	postHandler := authHandler.validationMiddleware(metricsHandler.metricsMiddleware(http.StripPrefix("/api", postProxy)))
+	mux.Handle("/api/posts/", postHandler) // Catches /api/posts/me and /api/posts/{userId}
 
 	//feed Service
-	feedHandler := metricsHandler.metricsMiddleware(authHandler.validationMiddleware(feedProxy))
+	feedHandler := authHandler.validationMiddleware(metricsHandler.metricsMiddleware(http.StripPrefix("/api", feedProxy)))
 	mux.Handle("/api/feed", feedHandler)
 
 	return mux, nil
 }
-
-

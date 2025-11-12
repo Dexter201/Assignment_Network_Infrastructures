@@ -163,6 +163,7 @@ func (loadBalancer *LoadBalancer) handleConnection(clientConnection net.Conn) {
 	go func() {
 		defer wg.Done()
 		rateLimitedReader := createRateLimitedReader(clientConnection, limiter) // wrap the client connection Reader with our rateLimiter
+		//dataplane: forwarding or raw tcp traffic
 		_, err := io.Copy(backendConnection, rateLimitedReader)
 		if err != nil && err != io.EOF {
 			log.Printf("Error copying client->backend: %v", err)
@@ -173,6 +174,7 @@ func (loadBalancer *LoadBalancer) handleConnection(clientConnection net.Conn) {
 	go func() {
 		defer wg.Done()
 		rateLimitedReader := createRateLimitedReader(backendConnection, limiter)
+		//dataplane: forwarding or raw tcp traffic
 		_, err := io.Copy(clientConnection, rateLimitedReader) // Backend -> Client
 		if err != nil && err != io.EOF {
 			log.Printf("Error copying backend->client: %v", err)

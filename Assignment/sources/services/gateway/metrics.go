@@ -91,7 +91,7 @@ func (metricsHandler *MetricsHandler) saveMetrics(receiver *http.Request, status
 }
 
 // WriteHeader captures the status code before writing it
-func (interceptor *responseWriterInterceptor) writeHeader(statusCode int) {
+func (interceptor *responseWriterInterceptor) WriteHeader(statusCode int) {
 	interceptor.statusCode = statusCode
 	interceptor.ResponseWriter.WriteHeader(statusCode)
 }

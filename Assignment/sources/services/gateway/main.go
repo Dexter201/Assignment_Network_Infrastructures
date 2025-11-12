@@ -19,12 +19,16 @@ func main() {
 	}
 	defer db.Close() //defer sets db close in a waititng list and executes when the main ends aka the server stops running
 
+	if err := initDB(db); err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+
 	authHandler := createAuthHandler(db, []byte(config.JWTSecret))
 	metricsHandler := createMetricsHandler()
 
 	router, err := createRouter(authHandler, metricsHandler, config)
 	if err != nil {
-		log.Fatalf("Failed to create router: %w", err)
+		log.Fatalf("Failed to create router: %v", err)
 	}
 
 	// Start the HTTPS server --> uses my self signed certificates

@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	_ "github.com/lib/pq"
 )
 
 // Config defines the specific configuration for the Gateway, read from environment variables.
@@ -100,4 +102,22 @@ func healthcheck(mux *http.ServeMux) {
 		writer.WriteHeader(http.StatusOK)
 		writer.Write([]byte("OK"))
 	})
+}
+
+// create the Table
+func initDB(db *sql.DB) error {
+	query := `
+	CREATE TABLE IF NOT EXISTS users (
+		id UUID PRIMARY KEY,
+		email TEXT NOT NULL UNIQUE,
+		password_hash TEXT NOT NULL,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	);
+	`
+	_, err := db.Exec(query)
+	if err != nil {
+		return fmt.Errorf("failed to create users table: %w", err)
+	}
+	log.Println("Database table 'users' verified successfully.")
+	return nil
 }

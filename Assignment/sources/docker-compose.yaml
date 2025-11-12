@@ -8,7 +8,14 @@ volumes:
   auth-pgdata: 
 
 services:
-
+  # --- ADD THIS NEW SERVICE ---
+  debug-client:
+    # 'nicolaka/netshoot' is a container with 'curl', 'telnet', 'ping', etc.
+    image: nicolaka/netshoot
+    networks:
+      - smnet
+    # Keep the container alive so we can 'exec' into it
+    command: ["sleep", "3600"]
 
   gateway:
     build: ./services/gateway
@@ -36,7 +43,7 @@ services:
       - post-load-balancer
       - feed-service
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.7.3
     ports:
       - "9090:9090"
     volumes:
@@ -74,9 +81,9 @@ services:
   feed-service:
     build: ./services/feed-service
     environment:
-      - FEED_SERVICE_PORT = ${FEED_SERVICE_PORT}
-      - USER_SERVICE_URL = ${USER_SERVICE_URL}
-      - POST_SERVICE_URL = ${POST_SERVICE_URL}
+      - FEED_SERVICE_PORT=${FEED_SERVICE_PORT}
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+      - POST_SERVICE_URL=${POST_SERVICE_URL}
     networks:
       - smnet
     depends_on:

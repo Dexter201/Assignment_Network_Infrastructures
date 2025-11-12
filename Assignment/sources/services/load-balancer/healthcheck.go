@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"net"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -19,6 +19,7 @@ type HealthChecker struct {
 	backends []*Backend
 	ticker   *time.Ticker
 	wg       sync.WaitGroup
+	client   *http.Client
 }
 
 func (backend *Backend) SetAlive(alive bool) {
@@ -44,6 +45,7 @@ func createHealthChecker(backendURLs []string) *HealthChecker {
 	return &HealthChecker{
 		backends: backends,
 		ticker:   time.NewTicker(10 * time.Second), // Check every 10 seconds
+		client:   &http.Client{Timeout: 2 * time.Second},
 	}
 }
 
@@ -69,13 +71,16 @@ func (healthChecker *HealthChecker) Stop() {
 // runHealthChecks pings all backends concurrently
 func (healthChecker *HealthChecker) runHealthChecks() {
 	var wg sync.WaitGroup
-	for _, b := range healthChecker.backends {
+	for _, backend := range healthChecker.backends {
 		wg.Add(1)
 		go func(backend *Backend) {
 			defer wg.Done()
 			// Ping the backend with a 2-second timeout
-			conn, err := net.DialTimeout("tcp", backend.URL, 2*time.Second)
+			//first implementation of a raw tcp healthcheck: not smart enough
+			//conn, err := net.DialTimeout("tcp", backend.URL, 2*time.Second)
 
+			//more intelligent healthcheck
+			response, err := healthChecker.client.Get("http://" + backend.URL)
 			wasAlive := backend.IsAlive()
 
 			if err != nil {
@@ -88,9 +93,9 @@ func (healthChecker *HealthChecker) runHealthChecks() {
 				if !wasAlive { // Only log if the state changes
 					log.Printf("Health check: Backend %s is UP", backend.URL)
 				}
-				conn.Close()
+				response.Body.Close()
 			}
-		}(b)
+		}(backend)
 	}
 	wg.Wait()
 }
@@ -98,9 +103,9 @@ func (healthChecker *HealthChecker) runHealthChecks() {
 // GetHealthyBackends returns a slice of URLs for all backends that are currently alive
 func (healthChecker *HealthChecker) GetHealthyBackends() []string {
 	var healthy []string
-	for _, b := range healthChecker.backends {
-		if b.IsAlive() {
-			healthy = append(healthy, b.URL)
+	for _, backend := range healthChecker.backends {
+		if backend.IsAlive() {
+			healthy = append(healthy, backend.URL)
 		}
 	}
 	return healthy
