@@ -5,6 +5,7 @@ import (
 	"net"
 )
 
+// entrypoint for the loadbalancer
 func main() {
 
 	config, err := LoadConfig()
@@ -14,7 +15,7 @@ func main() {
 
 	lb := createLoadBalancer(config)
 
-	// Start a TCP listener //layer 4
+	// Start a TCP listener --> layer 4
 	log.Printf("TCP Load Balancer starting on :%s, Algorithm: %s", config.Port, config.Algorithm)
 	listener, err := net.Listen("tcp", ":"+config.Port)
 	if err != nil {

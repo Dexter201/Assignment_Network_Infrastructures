@@ -15,21 +15,25 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// represents a authentification Handler
 type Handler struct {
 	db        *sql.DB
 	jwtSecret []byte
 }
 
+// represents credentials --> directly implemented from the instructions
 type Credentials struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
+// represents claims --> directly implemented from the instructions
 type Claims struct {
 	UserID string `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
+// create a new auth handler with a given db and a jwt secret
 func createAuthHandler(db *sql.DB, jwtSecret []byte) *Handler {
 	return &Handler{
 		db:        db,
@@ -37,6 +41,7 @@ func createAuthHandler(db *sql.DB, jwtSecret []byte) *Handler {
 	}
 }
 
+// register a new user
 func (handler *Handler) register(writer http.ResponseWriter, receiver *http.Request) {
 	var credentials Credentials
 
@@ -59,6 +64,7 @@ func (handler *Handler) register(writer http.ResponseWriter, receiver *http.Requ
 	json.NewEncoder(writer).Encode(map[string]string{"message": "User registered successfully"})
 }
 
+// login with an incoming user
 func (handler *Handler) login(writer http.ResponseWriter, receiver *http.Request) {
 
 	credentials, ok := decodeAndCheck(writer, receiver)
@@ -94,6 +100,7 @@ type privateUserKey string
 
 const userIDKey privateUserKey = "userID"
 
+// create a validation middleware
 func (header *Handler) validationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, receiver *http.Request) {
 
@@ -144,6 +151,7 @@ func (header *Handler) validationMiddleware(next http.Handler) http.Handler {
 
 // -------------------- handler utility methods --------------------
 
+// insert a new user in the db --> registration
 func (handler *Handler) insertNew(writer http.ResponseWriter, hashedPassword []byte, creds Credentials) error {
 	userID := uuid.New().String()
 
@@ -159,6 +167,7 @@ func (handler *Handler) insertNew(writer http.ResponseWriter, hashedPassword []b
 	return nil // success
 }
 
+// fetch user credentials --> userID, password
 func (handler *Handler) fetchUserCredentials(writer http.ResponseWriter, email string) (userID, hashedPassword string, ok bool) {
 	err := handler.db.QueryRow("SELECT id, password_hash FROM users WHERE email = $1", email).Scan(&userID, &hashedPassword)
 
@@ -175,6 +184,7 @@ func (handler *Handler) fetchUserCredentials(writer http.ResponseWriter, email s
 	return userID, hashedPassword, true // Success
 }
 
+// create a new json Tokken
 func (handler *Handler) createJWT(writer http.ResponseWriter, userID string) (string, bool) {
 
 	expirationTime := time.Now().Add(24 * time.Hour)
@@ -186,6 +196,7 @@ func (handler *Handler) createJWT(writer http.ResponseWriter, userID string) (st
 		},
 	}
 
+	// signing the token with HS256 method --> standard
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(handler.jwtSecret)
 
@@ -200,6 +211,7 @@ func (handler *Handler) createJWT(writer http.ResponseWriter, userID string) (st
 
 // -------------------- auth utilities --------------------
 
+// decode incoming credentials --> check validity
 func decodeAndCheck(writer http.ResponseWriter, receiver *http.Request) (Credentials, bool) {
 	var credentials Credentials
 
@@ -212,6 +224,7 @@ func decodeAndCheck(writer http.ResponseWriter, receiver *http.Request) (Credent
 	return credentials, true
 }
 
+// hash a password with bcrypt library
 func hashPassword(writer http.ResponseWriter, password string) ([]byte, bool) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -222,6 +235,7 @@ func hashPassword(writer http.ResponseWriter, password string) ([]byte, bool) {
 	return hashedPassword, true
 }
 
+// chech and compare the correctness of captured hashed password
 func checkPasswordHash(writer http.ResponseWriter, hash, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 

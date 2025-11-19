@@ -49,6 +49,7 @@ func createMetricsHandler() *MetricsHandler {
 	return metricsHandler
 }
 
+// create a new interceptor
 func createResponseWriterInterceptor(writer http.ResponseWriter) *responseWriterInterceptor {
 	return &responseWriterInterceptor{
 		ResponseWriter: writer,
@@ -56,6 +57,7 @@ func createResponseWriterInterceptor(writer http.ResponseWriter) *responseWriter
 	}
 }
 
+// create a new mectrics Middleware
 func (metricsHandler *MetricsHandler) metricsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, receiver *http.Request) {
 		startTime := time.Now()
@@ -70,6 +72,7 @@ func (metricsHandler *MetricsHandler) metricsMiddleware(next http.Handler) http.
 	})
 }
 
+// catch incoming traffic and update/save the new metrics
 func (metricsHandler *MetricsHandler) saveMetrics(receiver *http.Request, statusCode int, latency float64) {
 	urlPath := receiver.URL.Path
 	method := receiver.Method

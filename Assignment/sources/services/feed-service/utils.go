@@ -39,6 +39,7 @@ func LoadConfig() (*Config, error) {
 	return cfg, nil
 }
 
+// healthcheck for debugging
 func healthcheck(mux *http.ServeMux) {
 	//healthz is a standard way to name health check endpoints
 	mux.HandleFunc("/healthz", func(writer http.ResponseWriter, receiver *http.Request) {

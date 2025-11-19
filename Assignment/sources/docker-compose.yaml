@@ -8,20 +8,12 @@ volumes:
   auth-pgdata: 
 
 services:
-  # --- ADD THIS NEW SERVICE ---
-  debug-client:
-    # 'nicolaka/netshoot' is a container with 'curl', 'telnet', 'ping', etc.
-    image: nicolaka/netshoot
-    networks:
-      - smnet
-    # Keep the container alive so we can 'exec' into it
-    command: ["sleep", "3600"]
-
   gateway:
     build: ./services/gateway
     ports:
       # Best Choice": Map standard HTTPS port 443 
       # to our internal container port 8443.
+      # only expose the gateway and prometheus
       - "443:8443"
     volumes:
       - ./services/gateway/cert.pem:${GATEWAY_CERT_PATH}
@@ -44,6 +36,7 @@ services:
       - feed-service
   prometheus:
     image: prom/prometheus:v3.7.3
+    # only expose the gateway and prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -92,8 +85,6 @@ services:
 
   user-service-1:
     build: ./services/user-service
-    ports:
-      - "8001:5000"  # TO REMOVE: for testing purposes
     environment:
       - POSTGRES_DSN=${USER_POSTGRES_DSN}
     networks:
@@ -112,8 +103,6 @@ services:
 
   post-service-1:
     build: ./services/post-service
-    ports:
-      - "8002:5000"  # TO REMOVE: for testing purposes
     environment:
       - POSTGRES_DSN=${POST_POSTGRES_DSN}
     networks:

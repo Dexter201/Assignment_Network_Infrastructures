@@ -7,12 +7,13 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// rateLimitedReader wraps an io.Reader and uses a rate.Limiter to throttle bytes read.
+// rateLimitedReader wraps an io.Reader and uses a rate.Limiter to throttle transmission rate.
 type rateLimitedReader struct {
 	reader  io.Reader
 	limiter *rate.Limiter
 }
 
+// crete a new rate limiter
 func createRateLimitedReader(reader io.Reader, limiter *rate.Limiter) io.Reader {
 	return &rateLimitedReader{reader: reader, limiter: limiter}
 }

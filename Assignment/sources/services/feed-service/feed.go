@@ -10,17 +10,21 @@ import (
 	"time"
 )
 
+// stores cthe configs and the client currently connected in our FeedHandler
+// configs can be checked in the utils file
 type FeedHandler struct {
 	config *Config
 	client *http.Client
 }
 
+// rpresents a Post structure, directly derived from the projects instructions
 type Post struct {
 	Username  string    `json:"username"`
 	Content   string    `json:"content"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
+// create a new FeedHandler with specific configs
 func createFeedHandler(config *Config) *FeedHandler {
 	return &FeedHandler{
 		config: config,
@@ -65,7 +69,7 @@ func (handler *FeedHandler) ServeHTTP(writer http.ResponseWriter, receiver *http
 
 	finalFeed := limitPosts(allPosts, 10)
 
-	encodeResponse(writer, receiver, finalFeed)
+	encodeResponse(writer, finalFeed)
 	log.Printf("Successfully served feed for user %s with %d posts", userID, len(finalFeed))
 }
 
@@ -85,14 +89,15 @@ func limitPosts(posts []Post, limit int) []Post {
 }
 
 // encodeResponse sets the content type and writes the data as JSON to the ResponseWriter.
-func encodeResponse(w http.ResponseWriter, r *http.Request, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
+func encodeResponse(writer http.ResponseWriter, data interface{}) {
+	writer.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		log.Printf("Failed to encode response: %v", err)
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
+// fetch the Friends of a specific user
 func (handler *FeedHandler) fetchFriends(userID string) ([]string, error) {
 	//build request to fetch friends
 	requestURL := fmt.Sprintf("%s/friends", handler.config.UserLBURL)

@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// entrypoint for the gateway
 func main() {
 
 	config, err := LoadConfig()

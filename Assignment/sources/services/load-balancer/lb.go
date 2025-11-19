@@ -11,6 +11,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// represents a LoadBalancer
 type LoadBalancer struct {
 	config *Config
 	// next is the index of the backend to use for the next connection for roundrobin
@@ -64,24 +65,25 @@ func (loadBalancer *LoadBalancer) selectBackend(clientIP string) string {
 	}
 }
 
+// implements the roundRobin algorithm and gives back the next backend to handle
 func (loadBalancer *LoadBalancer) roundRobin(backends []string) string {
 	loadBalancer.mutex.Lock()
 	defer loadBalancer.mutex.Unlock()
 
 	// Use modulo with the length of the *healthy* backends
 	// We must ensure 'next' doesn't exceed the original backends list length,
-	// the selection is made from the healthy list.
 
 	if loadBalancer.next >= len(backends) {
 		loadBalancer.next = 0
 	}
 
 	backend := backends[loadBalancer.next]
-	// Increment 'next' for the next connection, wrapping around the healthy list length
+	// Increment 'next' for the next connection, wrapping around the healthy list length with modulo
 	loadBalancer.next = (loadBalancer.next + 1) % len(backends)
 	return backend
 }
 
+// implements the leastConn algorithm and gives back the next backend to handle
 func (loadBalancer *LoadBalancer) leastConn(backends []string) string {
 	loadBalancer.mutex.Lock()
 	defer loadBalancer.mutex.Unlock()
@@ -101,6 +103,7 @@ func (loadBalancer *LoadBalancer) leastConn(backends []string) string {
 	return selectedBackend
 }
 
+// implements the hashing algorithm and gives back the next backend to handle
 func (loadBalancer *LoadBalancer) hashing(clientIP string, backends []string) string {
 	// fnv == Package fnv implements non-cryptographic hash functions for us
 	hash := fnv.New32a()
@@ -112,18 +115,23 @@ func (loadBalancer *LoadBalancer) hashing(clientIP string, backends []string) st
 	return backends[index]
 }
 
+// increment the count of connections of a given backend in our connCounts list
 func (loadBalancer *LoadBalancer) increment(backendHost string) {
 	loadBalancer.mutex.Lock()
 	defer loadBalancer.mutex.Unlock()
 	loadBalancer.connCounts[backendHost]++
 }
 
+// decrement the count of connections of a given backend in our connCounts list
 func (loadBalancer *LoadBalancer) decrement(backendHost string) {
 	loadBalancer.mutex.Lock()
 	defer loadBalancer.mutex.Unlock()
 	loadBalancer.connCounts[backendHost]--
 }
 
+// handle a client connection
+// forward the traffic correctly to the correct backend ( depending on the algorithm chosen)
+// update the data stored in the structs for the next iterations of the algorithms
 func (loadBalancer *LoadBalancer) handleConnection(clientConnection net.Conn) {
 	defer clientConnection.Close() // prepare the closing of connections if handle Connection ends
 

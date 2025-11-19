@@ -11,7 +11,7 @@ ENV GO111MODULE=on
 
 # Copy `go.mod` and `go.sum` files to the container.
 # These files define the project's dependencies and their versions.
-# This means if only your source code changes (not dependencies).
+# More efficiant to copy the dependency files rather than install the dependencies again everytime the containers run
 COPY go.mod go.sum ./
 
 # Download all dependencies listed in `go.mod`.

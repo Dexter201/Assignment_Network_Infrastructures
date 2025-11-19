@@ -5,19 +5,18 @@ import (
 	"net/http"
 )
 
+// create a router for the feed handler to forward traffic to the correct endpoint
 func createRouter(handler *FeedHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("/feed", handler)
 
-	// Passive health check endpoint for Docker
-	mux.HandleFunc("/healthz", func(writer http.ResponseWriter, receiver *http.Request) {
-		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte("OK"))
-	})
+	// Passive health check endpoint for Docker --> debugging
+	healthcheck(mux)
 
 	return mux
 }
 
+// entrypoint for the feed service
 func main() {
 
 	config, err := LoadConfig()
@@ -29,7 +28,7 @@ func main() {
 
 	mux := createRouter(handler)
 
-	// 4. Start the HTTP server
+	// Start the HTTP server
 	log.Printf("Feed service listening on :%s (HTTP)", config.Port)
 	if err := http.ListenAndServe(":"+config.Port, mux); err != nil {
 		log.Fatalf("Feed service server failed: %v", err)

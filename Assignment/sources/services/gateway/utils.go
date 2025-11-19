@@ -71,10 +71,12 @@ func getEnvOrError(key string) (string, error) {
 	return value, nil
 }
 
+// call the next middleware to do it's job
 func callNextHandler(next http.Handler, writer http.ResponseWriter, receiver *http.Request) {
 	next.ServeHTTP(writer, receiver)
 }
 
+// connect/ continously connect until healthcheck done to the db
 func connectToDB(config *Config) (*sql.DB, error) {
 
 	connStr := config.AuthDSN

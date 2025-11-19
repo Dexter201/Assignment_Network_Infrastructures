@@ -47,7 +47,6 @@ func LoadConfig() (*Config, error) {
 	}
 	log.Printf("Loaded backends: %v", backends)
 
-	// --- Rate ---
 	var rate float64 = 100.0 // Default 100 MB/s
 	if rateStr != "" {
 		var err error
