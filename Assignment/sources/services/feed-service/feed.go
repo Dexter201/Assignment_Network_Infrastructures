@@ -34,7 +34,7 @@ func createFeedHandler(config *Config) *FeedHandler {
 	}
 }
 
-// ServeHTTP is the main entry point for requests to /feed and needs to be implmented to fullfil the handler interface
+// ServeHTTP is the main entry point for requests to /feed and needs to be implemented to fullfil the handler interface
 func (handler *FeedHandler) ServeHTTP(writer http.ResponseWriter, receiver *http.Request) {
 
 	//check if PUT, POST , ... methods are used and nothing else
@@ -91,7 +91,7 @@ func limitPosts(posts []Post, limit int) []Post {
 // encodeResponse sets the content type and writes the data as JSON to the ResponseWriter.
 func encodeResponse(writer http.ResponseWriter, data interface{}) {
 	writer.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(data); err != nil {
+	if err := json.NewEncoder(writer).Encode(data); err != nil {
 		log.Printf("Failed to encode response: %v", err)
 		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
 	}
@@ -126,7 +126,9 @@ func (handler *FeedHandler) fetchFriends(userID string) ([]string, error) {
 	return friendIDs, nil
 }
 
-func (handler *FeedHandler) fetchPosts(authUserID, friendID string) ([]Post, error) {
+// fetch a Posts of a friend
+// we need the userID to construct the request
+func (handler *FeedHandler) fetchPosts(userID, friendID string) ([]Post, error) {
 	// Build the request to fetch the Posts
 	requestURL := fmt.Sprintf("%s/posts/%s", handler.config.PostLBURL, friendID)
 	request, err := http.NewRequest(http.MethodGet, requestURL, nil)
@@ -134,7 +136,7 @@ func (handler *FeedHandler) fetchPosts(authUserID, friendID string) ([]Post, err
 		return nil, fmt.Errorf("failed to create posts request: %w", err)
 	}
 
-	request.Header.Set("X-User-ID", authUserID)
+	request.Header.Set("X-User-ID", userID)
 
 	response, err := handler.client.Do(request)
 	if err != nil {
@@ -154,6 +156,8 @@ func (handler *FeedHandler) fetchPosts(authUserID, friendID string) ([]Post, err
 	return posts, nil
 }
 
+// fetch all the Posts of a given List of Friends in parallel go routines
+// also need the userId to create the request
 func (handler *FeedHandler) fetchPostsForFriends(userID string, friendIDs []string) []Post {
 	var allPosts []Post
 	var wg sync.WaitGroup

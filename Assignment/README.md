@@ -125,7 +125,7 @@ It assumes your Docker containers are already running
 
 Your OS (Linux/macOS) may prevent you from installing packages globally. The best practice is to create a virtual environment for the Python packages.
 
-From the project's root directory:
+From the project's root directory or sources directory:
 
 # Create a virtual environment named .venv
 python3 -m venv .venv
@@ -145,7 +145,7 @@ pip install locust
 
 # Step 3: Run the Test
 
-Start the Locust test from the project's root directory:
+Start the Locust test from the project's sources directory:
 
 locust -f locustfile.py --host https://localhost
 
